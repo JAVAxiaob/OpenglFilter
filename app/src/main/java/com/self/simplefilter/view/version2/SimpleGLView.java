@@ -2,6 +2,8 @@ package com.self.simplefilter.view.version2;
 import android.content.Context;
 import android.opengl.GLSurfaceView;
 
+import com.self.simplefilter.view.version2.fbo.MiniFBORenderer;
+
 
 public class SimpleGLView extends GLSurfaceView {
     public SimpleGLView(Context context) {
@@ -9,7 +11,7 @@ public class SimpleGLView extends GLSurfaceView {
         //设置EGL上下文版本为2.0
         setEGLContextClientVersion(2);
         //设置渲染器
-        setRenderer(new BatchRender());
+        setRenderer(new MiniFBORenderer());
     }
 }
 

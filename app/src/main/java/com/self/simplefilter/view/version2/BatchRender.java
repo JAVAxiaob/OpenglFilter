@@ -1,4 +1,4 @@
-package com.self.simplefilter.view;
+package com.self.simplefilter.view.version2;
 
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;

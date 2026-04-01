@@ -1,13 +1,11 @@
-package com.self.simplefilter.view;
+package com.self.simplefilter.view.version2;
 
-import android.media.DrmInitData;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
 
 import com.self.simplefilter.utils.OpenGLUtil;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;

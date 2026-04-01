@@ -5,7 +5,7 @@ import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.self.simplefilter.view.SimpleGLView;
+import com.self.simplefilter.view.version2.SimpleGLView;
 
 public class MainActivity extends AppCompatActivity {
     @Override

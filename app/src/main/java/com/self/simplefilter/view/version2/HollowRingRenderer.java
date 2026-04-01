@@ -1,9 +1,8 @@
-package com.self.simplefilter.view;
+package com.self.simplefilter.view.version2;
 
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
-import android.util.Size;
 
 import com.self.simplefilter.utils.OpenGLUtil;
 

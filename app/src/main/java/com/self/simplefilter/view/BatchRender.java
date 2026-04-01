@@ -101,7 +101,7 @@ public class BatchRender implements GLSurfaceView.Renderer {
         // ====================== 只绑定一次 ======================
         GLES20.glUniformMatrix4fv(uMatrixHandle, 1, false, mProjectionMatrix, 0);
         GLES20.glVertexAttribPointer(vPositionHandle, 2,
-                GLES20.GL_FLOAT, false, 0, vertexBuffer);
+                GLES20.GL_FLOAT, false, 8, vertexBuffer);
         GLES20.glEnableVertexAttribArray(vPositionHandle);
 
         // ====================== 多次绘制：批渲染核心 ======================

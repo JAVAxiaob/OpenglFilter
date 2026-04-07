@@ -166,22 +166,39 @@ public class GaussianBlurRender implements GLSurfaceView.Renderer {
 
         // 3. 配置纹理参数
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mFboTextureId);
+        //当纹理被缩小显示时，使用线性平滑采样 (让缩小后的图不锯齿、更清晰)
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        //当纹理被放大显示时，也使用线性平滑采样。（放大不模糊、不锯齿，高斯模糊必须用这个
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        //纹理 ** 水平方向（左右）** 坐标超出 0~1 范围时，直接拉伸边缘颜色，不重复、不出现黑边。
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        //纹理 ** 垂直方向（上下）** 坐标超出 0~1 范围时，直接拉伸边缘颜色，不重复、不出现黑边。
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
         checkGLError("glTexParameteri");
 
         // 4. 分配纹理存储空间（RGBA_8888）
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0,
-                GLES20.GL_RGBA, mFboWidth, mFboHeight, 0,
-                GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+        GLES20.glTexImage2D(
+                GLES20.GL_TEXTURE_2D,  // 1. 这是一个 2D 纹理
+                0,                     // 2. 使用基础层级（mipmap 0）
+                GLES20.GL_RGBA,        // 3. 纹理在GPU里存成 RGBA 格式（红、绿、蓝、透明）
+                mFboWidth,             // 4. 纹理宽度
+                mFboHeight,            // 5. 纹理高度
+                0,                     // 6. 边框（必须填 0，OpenGL ES 不支持边框）
+                GLES20.GL_RGBA,        // 7. 数据格式也是 RGBA
+                GLES20.GL_UNSIGNED_BYTE,//8. 每个颜色占 8 位（0~255）
+                null                   // 9. 不传图片数据 → 只开辟空显存
+        );
         checkGLError("glTexImage2D");
 
         // 5. 绑定FBO并附加纹理
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFboId);
-        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER,
-                GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, mFboTextureId, 0);
+        GLES20.glFramebufferTexture2D(
+                GLES20.GL_FRAMEBUFFER,      // 目标：帧缓冲
+                GLES20.GL_COLOR_ATTACHMENT0,// 挂到：颜色附着点0
+                GLES20.GL_TEXTURE_2D,       // 纹理类型
+                mFboTextureId,              // 要挂上去的纹理ID
+                0                            // mipmap层级（固定0）
+        );
         checkGLError("glFramebufferTexture2D");
 
         // 6. 检查FBO完整性
@@ -232,9 +249,23 @@ public class GaussianBlurRender implements GLSurfaceView.Renderer {
 
             // 设置顶点和纹理坐标
             mBlurVertexBuffer.position(0);
-            GLES20.glVertexAttribPointer(mBlurPositionHandle, 2, GLES20.GL_FLOAT, false, 16, mBlurVertexBuffer);
+            GLES20.glVertexAttribPointer(
+                    mBlurPositionHandle,  // 传给：位置属性
+                    2,                    // 每次取 2个值：x,y
+                    GLES20.GL_FLOAT,      // 浮点型
+                    false,                // 不用归一化
+                    16,                   // 读完一组，跳过 16字节，再取下一组
+                    mBlurVertexBuffer     // 数据源
+            );
             mBlurVertexBuffer.position(2);
-            GLES20.glVertexAttribPointer(mBlurTexCoordHandle, 2, GLES20.GL_FLOAT, false, 16, mBlurVertexBuffer);
+            GLES20.glVertexAttribPointer(
+                    mBlurTexCoordHandle,  // 传给：纹理坐标
+                    2,                    // 每次取 2个值：s,t
+                    GLES20.GL_FLOAT,
+                    false,
+                    16,                   // 同样跳过 16字节
+                    mBlurVertexBuffer
+            );
 
             GLES20.glEnableVertexAttribArray(mBlurPositionHandle);
             GLES20.glEnableVertexAttribArray(mBlurTexCoordHandle);

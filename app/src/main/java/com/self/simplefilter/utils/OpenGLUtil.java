@@ -1,6 +1,8 @@
 package com.self.simplefilter.utils;
 
+import android.graphics.Bitmap;
 import android.opengl.GLES20;
+import android.opengl.GLUtils;
 
 public class OpenGLUtil {
     public static int compileShader(int type, String source) {
@@ -27,5 +29,20 @@ public class OpenGLUtil {
         //链接程序器
         GLES20.glLinkProgram(program);
         return program;
+    }
+
+    public static int loadTextureFromBitmap(Bitmap bitmap) {
+        int[] texIds = new int[1];
+        GLES20.glGenTextures(1, texIds, 0);
+        int texId = texIds[0];
+
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texId);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+
+      GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+        return texId;
     }
 }

@@ -194,9 +194,11 @@ public class ColorImageRender implements GLSurfaceView.Renderer {
 
         GLES20.glEnableVertexAttribArray(mBasePositionHandle);
         GLES20.glEnableVertexAttribArray(mBaseTexCoordHandle);
-
+        // 激活0号纹理插槽（默认、单纹理专用）
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        // 把狗狗图片纹理 插进 0号插槽
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mImageTextureId);
+        // 告诉着色器的uTexture：去0号插槽拿图片数据
         GLES20.glUniform1i(mBaseTextureHandle, 0);
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
@@ -241,7 +243,7 @@ public class ColorImageRender implements GLSurfaceView.Renderer {
 
         GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA,
                 mFboWidth, mFboHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
-
+        // 这里绑定：只为了【配置FBO】（绑定纹理、设置参数）
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFboId);
         GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
                 GLES20.GL_TEXTURE_2D, mFboTextureId, 0);

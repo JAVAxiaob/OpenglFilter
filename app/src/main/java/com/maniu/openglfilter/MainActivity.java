@@ -7,6 +7,8 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.RadioGroup;
 
 import com.maniu.openglfilter.widget.RecordButton;
@@ -28,6 +30,14 @@ public class MainActivity extends AppCompatActivity implements RecordButton.OnRe
         RadioGroup rgSpeed = findViewById(R.id.rg_speed);
         rgSpeed.setOnCheckedChangeListener(this);
         checkPermission();
+
+
+        ((CheckBox)findViewById(R.id.beauty)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                cameraView.enableBeauty(isChecked);
+            }
+        });
     }
 
     public boolean checkPermission() {

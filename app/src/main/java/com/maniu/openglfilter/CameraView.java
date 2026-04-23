@@ -61,4 +61,8 @@ public class CameraView extends GLSurfaceView {
     public void stopRecord(){
         renderer.stopRecord();
     }
+
+    public void enableBeauty(boolean isChecked) {
+        renderer.enableBeauty(isChecked);
+    }
 }

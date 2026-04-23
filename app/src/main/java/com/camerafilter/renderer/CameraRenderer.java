@@ -73,10 +73,20 @@ public class CameraRenderer implements GLSurfaceView.Renderer, Preview.OnPreview
     @Override
     public void onUpdated(Preview.PreviewOutput output) {
         mSurfaceTexture = output.getSurfaceTexture();
-
-        if (glSurfaceView != null && glSurfaceView.getHolder().getSurface().isValid() && !surfaceTextureAttached) {
-            glSurfaceView.queueEvent(this::attachSurfaceTexture);
-        }
+        int cameraHeight = output.getTextureSize().getHeight();
+        int cameraWidth = output.getTextureSize().getWidth();
+        int rotationDegrees = output.getRotationDegrees();
+        glSurfaceView.queueEvent(() -> {
+            // ====================== 【矩阵校正】 ======================
+            // 2. 设置相机尺寸 + 显示尺寸（自动防拉伸）
+            filterManager.setCameraOrientation(rotationDegrees, true);
+            filterManager.setCameraSize(cameraWidth, cameraHeight,
+                    glSurfaceView.getWidth(),
+                    glSurfaceView.getHeight());
+        });
+//        if (glSurfaceView != null && glSurfaceView.getHolder().getSurface().isValid() && !surfaceTextureAttached) {
+//            glSurfaceView.queueEvent(this::attachSurfaceTexture);
+//        }
     }
 
     private void attachSurfaceTexture() {

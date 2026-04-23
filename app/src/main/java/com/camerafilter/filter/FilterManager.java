@@ -1,6 +1,7 @@
 package com.camerafilter.filter;
 
 import java.util.Objects;
+
 import android.util.Log;
 
 public class FilterManager {
@@ -8,6 +9,18 @@ public class FilterManager {
     private static final String TAG = "FilterManager";
     private int width;
     private int height;
+
+    public void setCameraSize(int cameraWidth, int cameraHeight, int width, int height) {
+        if (cameraFilter != null) {
+            cameraFilter.setCameraSize(cameraWidth, cameraHeight, width, height);
+        }
+    }
+
+    public void setCameraOrientation(int rotation, boolean frontCamera) {
+        if (cameraFilter!=null){
+            cameraFilter.setCameraOrientation(rotation, frontCamera);
+        }
+    }
 
     public enum FilterType {
         ORIGIN,

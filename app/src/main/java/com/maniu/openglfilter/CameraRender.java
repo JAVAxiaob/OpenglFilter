@@ -25,6 +25,9 @@ public class CameraRender implements GLSurfaceView.Renderer, Preview.OnPreviewOu
     private MediaRecorder mRecorder;
 //    int
     private CameraFilter cameraFilter;
+    private SoulFilter soulFilter;
+    private BeautyFilter beautyFilter;
+//    private SplitFilter splitFilter;
     private  int[] textures;
     float[] mtx = new float[16];
     public CameraRender(CameraView cameraView) {
@@ -47,9 +50,15 @@ public class CameraRender implements GLSurfaceView.Renderer, Preview.OnPreviewOu
         cameraFilter = new CameraFilter(cameraView.getContext());
         Context context = cameraView.getContext();
         recordFilter = new RecordFilter(context);
-        String path = new File(Environment.getExternalStorageDirectory(),
-                "input.mp4").getAbsolutePath();
+        beautyFilter = new BeautyFilter(context);
+//        soulFilter = new SoulFilter(context);
+//        splitFilter = new SplitFilter(context);
+        File file = new File(Environment.getExternalStorageDirectory(), "input.mp4");
+        if (file.exists()) {
+            file.delete();
+        }
 
+        String path = file.getAbsolutePath();
         mRecorder = new MediaRecorder(cameraView.getContext(), path,
                 EGL14.eglGetCurrentContext(),
                 480, 640);
@@ -61,6 +70,9 @@ public class CameraRender implements GLSurfaceView.Renderer, Preview.OnPreviewOu
 //
         recordFilter.setSize(width,height);
         cameraFilter.setSize(width,height);
+        beautyFilter.setSize(width, height);
+//        soulFilter.setSize(width, height);
+//        splitFilter.setSize(width,height);
     }
 //  有数据的时候给
     @Override
@@ -79,10 +91,21 @@ public class CameraRender implements GLSurfaceView.Renderer, Preview.OnPreviewOu
         int id =  cameraFilter.onDraw(textures[0]);
 // 加载   新的顶点程序 和片元程序  显示屏幕  id  ----》fbo--》 像素详细
 //        显示到屏幕
+//        id =  soulFilter.onDraw(id);
+//        id = splitFilter.onDraw(id);
+
+//        是一样的
+        boolean isOpen = true;
+        if (beautyFilter != null) {
+//            行     打开 还是不打开 美颜滤镜    资源泄露
+            id = beautyFilter.onDraw(id);
+        }
+
         id = recordFilter.onDraw(id);
+
 //        拿到了fbo的引用   ---》  编码视频      输出  直播推理
 //        起点
-//           起点数据  主动调用   opengl的函数
+//           起点数据  主动调用   opengl的函数  录制
         mRecorder.fireFrame(id,mCameraTexure.getTimestamp());
     }
 //
@@ -108,4 +131,23 @@ public class CameraRender implements GLSurfaceView.Renderer, Preview.OnPreviewOu
     public void stopRecord() {
         mRecorder.stop();
     }
+    public void enableBeauty(final boolean isChecked) {
+
+        cameraView.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                if (isChecked) {
+                    beautyFilter = new BeautyFilter(cameraView.getContext());
+                    beautyFilter.setSize(cameraView.getWidth(), cameraView.getHeight());
+                }else {
+                    if (beautyFilter!=null){
+                        beautyFilter.release();
+                        beautyFilter = null;
+                    }
+                }
+            }
+        });
+//        Opengl 线程  来做   fbo
+    }
+
 }

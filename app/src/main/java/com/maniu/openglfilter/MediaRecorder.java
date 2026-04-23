@@ -8,56 +8,60 @@ import android.media.MediaMuxer;
 import android.opengl.EGLContext;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.Log;
 import android.view.Surface;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class MediaRecorder {
+    private static final String TAG = "David";
     private MediaCodec mMediaCodec;
-    private int mWidth;
-    private int mHeight;
-    private String mPath;
+    private   int mWidth;
+    private   int mHeight;
+    private   String mPath;
     private Surface mSurface;
     private Handler mHandler;
-    private MediaMuxer mMuxer;
     private EGLContext mGlContext;
     private EGLEnv eglEnv;
     private boolean isStart;
-    private Context mContext;
-
-    private long mLastTimeStamp;
-    private int track = -1;
-    private float mSpeed;
-    private boolean isEncoding = false;
-
-    public MediaRecorder(Context context, String path, EGLContext glContext, int width, int height) {
+    private   Context mContext;
+    private long startTime;
+    public MediaRecorder(Context context, String path, EGLContext glContext, int width, int
+            height) {
         mContext = context.getApplicationContext();
         mPath = path;
         mWidth = width;
         mHeight = height;
         mGlContext = glContext;
     }
-
     public void start(float speed) throws IOException {
-        mSpeed = speed;
-        track = -1;
-        mLastTimeStamp = 0;
-
-        MediaFormat format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, mWidth, mHeight);
-        format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
+        MediaFormat format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC,
+                mWidth, mHeight);
+        //颜色空间 从 surface当中获得
+        format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities
+                .COLOR_FormatSurface);
+        //码率
         format.setInteger(MediaFormat.KEY_BIT_RATE, 1500_000);
+        //帧率
         format.setInteger(MediaFormat.KEY_FRAME_RATE, 25);
+        //关键帧间隔
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 10);
-
+        //创建编码器
         mMediaCodec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC);
+        //配置编码器
         mMediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-        mSurface = mMediaCodec.createInputSurface();
-        mMuxer = new MediaMuxer(mPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+//输入数据     byte[]    gpu  mediaprojection
 
+        mSurface= mMediaCodec.createInputSurface();
+
+//        视频  编码一个可以播放的视频
+        //混合器 (复用器) 将编码的h.264封装为mp4
+        //开启编码
         mMediaCodec.start();
-        isEncoding = true;
-
+//        重点    opengl   gpu里面的数据画面   肯定要调用   opengl 函数
+//线程
+        //創建OpenGL 的 環境
         HandlerThread handlerThread = new HandlerThread("codec-gl");
         handlerThread.start();
         mHandler = new Handler(handlerThread.getLooper());
@@ -65,122 +69,73 @@ public class MediaRecorder {
         mHandler.post(new Runnable() {
             @Override
             public void run() {
-                eglEnv = new EGLEnv(mContext, mGlContext, mSurface, mWidth, mHeight);
+                eglEnv = new EGLEnv(mContext,mGlContext, mSurface,mWidth, mHeight);
                 isStart = true;
             }
         });
-    }
 
+    }
+//    编码   textureId数据  并且编码
+//byte[]
     public void fireFrame(final int textureId, final long timestamp) {
-        if (!isStart || !isEncoding) {
+//        主动拉去openglfbo数据
+        if (!isStart) {
             return;
         }
+        //录制用的opengl已经和handler的线程绑定了 ，所以需要在这个线程中使用录制的opengl
         mHandler.post(new Runnable() {
-            @Override
             public void run() {
-                eglEnv.draw(textureId, timestamp);
+//                opengl   能 1  不能2  draw  ---》surface
+                eglEnv.draw(textureId,timestamp);
+//                获取对应的数据
                 codec(false);
             }
         });
+
     }
 
     private void codec(boolean endOfStream) {
-        if (mMediaCodec == null || !isEncoding) {
-            return;
+//        数据什么时候
+//        编码
+        //给个结束信号
+        if (endOfStream) {
+            mMediaCodec.signalEndOfInputStream();
         }
-
-        try {
-            while (isEncoding) {
-                MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
-                int index;
-
-                try {
-                    index = mMediaCodec.dequeueOutputBuffer(bufferInfo, 1000);
-                } catch (IllegalStateException e) {
-                    break;
+            MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
+            int index = mMediaCodec.dequeueOutputBuffer(bufferInfo, 10_000);
+            Log.i(TAG, "run: " + index);
+            if (index >= 0) {
+                ByteBuffer buffer = mMediaCodec.getOutputBuffer(index);
+                MediaFormat mediaFormat = mMediaCodec.getOutputFormat(index);
+                Log.i(TAG, "mediaFormat: " + mediaFormat.toString());
+                byte[] outData = new byte[bufferInfo.size];
+                buffer.get(outData);
+                if (startTime == 0) {
+                    // 微妙转为毫秒
+                    startTime = bufferInfo.presentationTimeUs / 1000;
                 }
-
-                if (index == MediaCodec.INFO_TRY_AGAIN_LATER) {
-                    if (!endOfStream) {
-                        break;
-                    } else {
-                        continue;
-                    }
-                } else if (index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    MediaFormat newFormat = mMediaCodec.getOutputFormat();
-                    if (mMuxer != null && track < 0) {
-                        track = mMuxer.addTrack(newFormat);
-                        mMuxer.start();
-                    }
-                } else if (index == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
-
-                } else if (index >= 0) {
-                    bufferInfo.presentationTimeUs = (long) (bufferInfo.presentationTimeUs / mSpeed);
-                    if (bufferInfo.presentationTimeUs <= mLastTimeStamp) {
-                        bufferInfo.presentationTimeUs = mLastTimeStamp + 1000000 / 25;
-                    }
-                    mLastTimeStamp = bufferInfo.presentationTimeUs;
-
-                    ByteBuffer encodedData = mMediaCodec.getOutputBuffer(index);
-
-                    if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
-                        bufferInfo.size = 0;
-                    }
-
-                    if (bufferInfo.size > 0 && mMuxer != null && track >= 0) {
-                        encodedData.position(bufferInfo.offset);
-                        encodedData.limit(bufferInfo.offset + bufferInfo.size);
-                        mMuxer.writeSampleData(track, encodedData, bufferInfo);
-                    }
-
-                    mMediaCodec.releaseOutputBuffer(index, false);
-
-                    if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                        break;
-                    }
-                }
+                FileUtils.writeContent(outData);
+                FileUtils.writeBytes(outData);
+//                包含   分隔符
+                mMediaCodec.releaseOutputBuffer(index, false);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
-
     public void stop() {
+        // 释放
         isStart = false;
-        isEncoding = false;
-
-        if (mHandler != null) {
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        codec(true);
-
-                        if (mMediaCodec != null) {
-                            mMediaCodec.stop();
-                            mMediaCodec.release();
-                            mMediaCodec = null;
-                        }
-
-                        if (mMuxer != null) {
-                            mMuxer.stop();
-                            mMuxer.release();
-                            mMuxer = null;
-                        }
-
-                        if (eglEnv != null) {
-                            eglEnv.release();
-                            eglEnv = null;
-                        }
-
-                        mSurface = null;
-                        mHandler.getLooper().quitSafely();
-                        mHandler = null;
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-        }
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                codec(true);
+                mMediaCodec.stop();
+                mMediaCodec.release();
+                mMediaCodec = null;
+                eglEnv.release();
+                eglEnv = null;
+                mSurface = null;
+                mHandler.getLooper().quitSafely();
+                mHandler = null;
+            }
+        });
     }
 }

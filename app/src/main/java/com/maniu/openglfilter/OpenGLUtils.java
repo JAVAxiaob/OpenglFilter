@@ -2,6 +2,7 @@ package com.maniu.openglfilter;
 
 import android.content.Context;
 import android.opengl.GLES20;
+import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -126,7 +127,7 @@ public class OpenGLUtils {
         if (status[0] != GLES20.GL_TRUE) {
             //失败
             throw new IllegalStateException("load fragment shader:" + GLES20.glGetShaderInfoLog
-                    (fShader));
+                    (vShader));
         }
 
 

@@ -20,8 +20,8 @@ public class AbstractFilter {
     private   int vCoord;
     private   int vTexture;
     private   int vMatrix;
-    private int mWidth;
-    private int mHeight;
+    protected int mWidth;
+    protected int mHeight;
     private float[] mtx;
     //gpu顶点缓冲区
     FloatBuffer vertexBuffer; //顶点坐标缓存区
@@ -31,7 +31,7 @@ public class AbstractFilter {
             -1.0f, 1.0f,
             1.0f, 1.0f
     };
-
+//定死的值 1  不是 2
     float[] TEXTURE = {
             0.0f, 0.0f,
             1.0f, 0.0f,
@@ -99,7 +99,7 @@ public class AbstractFilter {
 //        形状就确定了
 
 //         32  数据
-//gpu    获取读取
+//gpu    获取读取    //使用第几个图层
         GLES20.glActiveTexture(GL_TEXTURE0);
 
 //生成一个采样
@@ -109,6 +109,7 @@ public class AbstractFilter {
         beforeDraw();
 //通知 渲染画面 画画，  渲染 到 屏幕    物理设备  屏幕  屏幕
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP,0,4);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,0);
         return texture;
     }
     public void beforeDraw() {

@@ -3,16 +3,15 @@ package com.maniu.openglfilter;
 import android.content.Context;
 import android.opengl.GLES20;
 
-public class AbstractFboFilter extends AbstractFilter {
-    //    cpu
+public class AbstractFboFilter  extends  AbstractFilter{
+//    cpu
     int[] frameBuffer;
     int[] frameTextures;
-
     public AbstractFboFilter(Context context, int vertexShaderId, int fragmentShaderId) {
         super(context, vertexShaderId, fragmentShaderId);
     }
 
-    //  初始化  fbo
+//  初始化  fbo
     @Override
     public void setSize(int width, int height) {
 //    实例化  fbo     让摄像头的数据  先渲染到  fbo
@@ -91,14 +90,12 @@ public class AbstractFboFilter extends AbstractFilter {
             GLES20.glDeleteFramebuffers(1, frameBuffer, 0);
         }
     }
-
     @Override
     public int onDraw(int texture) {
 //        数据渲染到  fbo中  屏幕 1   不是  2  输出设备 就是fbo
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBuffer[0]);
         super.onDraw(texture);
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);  //
-        return frameTextures[0];
+        return frameTextures[0] ;
     }
-
 }
